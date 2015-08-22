@@ -6,65 +6,38 @@
 #include <boost/timer.hpp>
 
 cui3d::CuiImage draw(int h, int w, double t) {
-  cui3d::Camera c;
+  using namespace cui3d;
+  Camera c;
   c.camera_pos = cui3d::Vec3D(0.0, 0.0, -2.0);
-  c.camera_direction = cui3d::Vec3D(0.0, 0.0, 1.0);
-  std::vector<cui3d::Polygon> poly_v(5);
-  /*
-  bg.triangles.emplace_back(cui3d::Vec3D(-1.0, -1.0, 0.5),
-      cui3d::Vec3D(-1.0, 1.0, 1.0), cui3d::Vec3D(1.0, 1.0, 1.0));
-  bg.triangles.emplace_back(cui3d::Vec3D(1.0, 1.0, 1.0),
-      cui3d::Vec3D(-1.0, -1.0, 1.0), cui3d::Vec3D(1.0, -1.0, 1.0));
-      */
-  int x[5] = {0, 1, 1, 0, 0};
-  int y[5] = {0, 0, 1, 1, 0};
-  for (int i = 0; i < 4; ++i) {
-    poly_v[i+1].triangles.emplace_back(
-        cui3d::Vec3D(t*0.016+-0.8+x[i]*0.3, t*0.016+-0.8+y[i]*0.3, 0.0),
-        cui3d::Vec3D(t*0.016+-0.8+x[i]*0.3, t*0.016+-0.8+y[i]*0.3, 0.3),
-        cui3d::Vec3D(t*0.016+-0.8+x[i+1]*0.3, t*0.016+-0.8+y[i+1]*0.3, 0.0));
-    poly_v[i+1].triangles.emplace_back(
-        cui3d::Vec3D(t*0.016+-0.8+x[i+1]*0.3, t*0.016+-0.8+y[i+1]*0.3, 0.0),
-        cui3d::Vec3D(t*0.016+-0.8+x[i+1]*0.3, t*0.016+-0.8+y[i+1]*0.3, 0.3),
-        cui3d::Vec3D(t*0.016+-0.8+x[i]*0.3, t*0.016+-0.8+y[i]*0.3, 0.3));
-  }
-  poly_v[0].triangles.emplace_back(
-      cui3d::Vec3D(t*0.016+-0.8, t*0.016+-0.8, 0.0),
-      cui3d::Vec3D(t*0.016+-0.8, t*0.016+-0.5, 0.0),
-      cui3d::Vec3D(t*0.016+-0.5, t*0.016+-0.8, 0.0));
-  poly_v[0].triangles.emplace_back(
-      cui3d::Vec3D(t*0.016+-0.5, t*0.016+-0.5, 0.0),
-      cui3d::Vec3D(t*0.016+-0.8, t*0.016+-0.5, 0.0),
-      cui3d::Vec3D(t*0.016+-0.5, t*0.016+-0.8, 0.0));
-  //bg.texture = {{'.'}};
-  for (int i = 0; i < 4; ++i)
-    poly_v[i+1].texture = {{(char)('+'+i)}};
-  poly_v[0].texture = {{'@'}};
+  c.camera_direction = cui3d::Vec3D(0.0, 0.0, 2.0);
+  std::vector<Polygon> p;
+  p.emplace_back(cui3d::make_cuboid(Vec3D(t*1.6-0.8, 0.2, 0.0),
+      Vec3D(t*1.6-0.5,0.5, 0.3)));
+  p.emplace_back(cui3d::make_cuboid(Vec3D(-t*1.6+0.2, -0.2, 0.0),
+      Vec3D(-t*1.6+0.5,0.1, 0.3)));
+  p[0].texture = {{'@'}};
+  p[1].texture = {{'#'}};
   cui3d::CuiImage img(h, w);
-  //img = c.render(img, bg);
-  img = c.render(img, poly_v);
+  img = c.render(img, p);
   return img;
 }
 
-std::tuple<double, double, double> movie() {
-  double img_gen_time = 0;
-  double draw_time = 0;
-  double render_time = 0;
+std::tuple<int, int> fix_size(int h, int w, double ratio = 2.0) {
+  if (w > h * ratio) return std::make_tuple(h, h*ratio);
+  else return std::make_tuple(w/ratio, w);
+}
+
+int main() {
   cui3d::Screen scr;
-  for (int i = 0; i < 100; ++i) {
-    double t = i;
+  for (int i = 0; i < 200; ++i) {
+    double t = i/200.0;
     double process_time = 0;
     boost::timer tm;
-    cui3d::CuiImage img = draw(scr.get_height(), scr.get_width(), t);
-    img_gen_time += tm.elapsed();
-    process_time += tm.elapsed();
-    tm.restart();
+    int h, w;
+    std::tie(h, w) = fix_size(scr.get_height(), scr.get_width(), 2.5);
+    cui3d::CuiImage img = draw(h, w, t);
     scr.draw(img);
-    draw_time += tm.elapsed();
-    process_time += tm.elapsed();
-    tm.restart();
     scr.render();
-    render_time += tm.elapsed();
     process_time += tm.elapsed();
     double rem = 1.0/60 - process_time;
     if (rem > 0) {
@@ -72,12 +45,5 @@ std::tuple<double, double, double> movie() {
       nanosleep(&ts, nullptr);
     }
   }
-  return std::make_tuple(img_gen_time, draw_time, render_time);
-}
-
-int main() {
-  double it, dt, rt;
-  std::tie(it, dt, rt) = movie();
-  std::cout << it << ' ' << dt << ' ' << rt << std::endl;
   return 0;
 }
