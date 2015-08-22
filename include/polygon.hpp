@@ -4,31 +4,9 @@
 #include <cstddef>
 #include <array>
 #include <vector>
+#include "geometry.hpp"
 
 namespace cui3d {
-
-class Vec3D {
- public:
-  Vec3D() {};
-  Vec3D(double x, double y, double z) : vec{x, y, z} {}
-  double &operator[](std::size_t index) { return vec[index]; }
-  const double &operator[](std::size_t index) const { return vec[index]; }
- private:
-  std::array<double, 3> vec;
-};
-
-Vec3D operator+(const Vec3D &, const Vec3D &);
-Vec3D operator-(const Vec3D &, const Vec3D &);
-Vec3D operator-(const Vec3D &);
-Vec3D operator*(const Vec3D &, const Vec3D &);
-
-struct Triangle {
-  Vec3D &operator[](std::size_t index) { return verticies[index]; }
-  const Vec3D &operator[](std::size_t index) const { return verticies[index]; }
-  std::array<Vec3D, 3> verticies;
-  Triangle(Vec3D a, Vec3D b, Vec3D c)
-    : verticies{a, b, c} {}
-};
 
 struct Polygon {
   template <typename T>
@@ -36,6 +14,8 @@ struct Polygon {
   std::vector<Triangle> triangles;
   table<char> texture;
 };
+
+Polygon make_cuboid(const Vec3D &, const Vec3D &);
 
 class Camera {
  public:

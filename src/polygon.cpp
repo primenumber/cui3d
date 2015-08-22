@@ -2,26 +2,28 @@
 #include <cmath>
 #include <bitset>
 #include <complex>
+#include <boost/optional.hpp>
 
 namespace cui3d {
 
-Vec3D operator+(const Vec3D &lhs, const Vec3D &rhs) {
-  Vec3D res;
-  for (int i = 0; i < 3; ++i) res[i] = lhs[i] + rhs[i];
-  return res;
-}
-
-Vec3D operator-(const Vec3D &lhs, const Vec3D &rhs) {
-  Vec3D res;
-  for (int i = 0; i < 3; ++i) res[i] = lhs[i] - rhs[i];
-  return res;
-}
-
-Vec3D operator*(const Vec3D &lhs, const Vec3D &rhs) {
-  Vec3D res;
+Polygon make_cuboid(const Vec3D &begin, const Vec3D &end) {
+  Polygon res;
+  std::array<Vec3D, 8> verticies;
+  for (int i = 0; i < 8; ++i) {
+    std::bitset<3> be(i);
+    Vec3D p;
+    for (int j = 0; j < 3; ++j) {
+      p[j] = be[j] ? begin[j] : end[j];
+    }
+    verticies[i] = p;
+  }
   for (int i = 0; i < 3; ++i) {
-    int j=(i+1)%3, k=(i+2)%3;
-    res[i] = lhs[j]*rhs[k] - lhs[k]*rhs[j];
+    int a = 1<<i, b = 1<<((i+1)%3);
+    for (int j = 0; j < 2; ++j) {
+      int c = (0x7^(a|b))*j;
+      res.triangles.emplace_back(verticies[c], verticies[a+c], verticies[b+c]);
+      res.triangles.emplace_back(verticies[a+b+c], verticies[a+c], verticies[b+c]);
+    }
   }
   return res;
 }
@@ -70,6 +72,16 @@ VVP convert2d(const Polygon &p, const Vec3D &camera_pos) {
   return res;
 }
 
+std::vector<Vec3D> cross(const Polygon &p, const Line &l) {
+  std::vector<Vec3D> v;
+  for (const auto &tri : p.triangles) {
+    if (auto op = cross(tri, l)) {
+      v.emplace_back(*op);
+    }
+  }
+  return v;
+}
+
 CuiImage Camera::render(CuiImage &img, const Polygon &p) {
   auto poly2d = convert2d(p, camera_pos);
   for (int i = 0; i < img.height; ++i) {
@@ -86,17 +98,28 @@ CuiImage Camera::render(CuiImage &img, const Polygon &p) {
 }
 
 CuiImage Camera::render(CuiImage &img, const std::vector<Polygon> &vp) {
-  std::vector<VVP> poly2dv;
-  for (auto &p : vp) poly2dv.emplace_back(convert2d(p, camera_pos));
+  std::vector<std::vector<double>> depth(img.height,
+      std::vector<double>(img.width, 1e+8));
+  auto basis = orthonormal_basis(camera_direction);
   for (int i = 0; i < img.height; ++i) {
     for (int j = 0; j < img.width; ++j) {
       double x = (double)j / img.width - 0.5;
       double y = (double)i / img.height - 0.5;
+      double scale = abs(camera_direction);
+      Line l(camera_pos,
+          camera_pos + camera_direction + x * basis[0] + y * basis[1]);
       for (int k = 0; k < vp.size(); ++k) {
-        if (is_in_polygon(x, y, poly2dv[k])) {
-          img.data[i][j] = vp[k].texture[i%vp[k].texture.size()][j%vp[k].texture[0].size()];
-          img.visible[i][j] = true;
-          break;
+        int ti = i % vp[k].texture.size();
+        int tj = j % vp[k].texture[0].size();
+        char ch = img.data[i][j] = vp[k].texture[ti][tj];
+        auto vc = cross(vp[k], l);
+        for (auto p : vc) {
+          double dep = abs(p - camera_pos);
+          if (dep < depth[i][j]) {
+            img.data[i][j] = ch;
+            img.visible[i][j] = true;
+            depth[i][j] = dep;
+          }
         }
       }
     }
