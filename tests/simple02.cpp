@@ -14,7 +14,7 @@ cui3d::CuiImage draw(int h, int w, double t) {
   std::vector<Polygon> p;
   p.emplace_back(cui3d::make_cuboid(Vec3D(-0.1, 0.2, 0.0),
       Vec3D(0.1, 0.4, 0.2)));
-  p[0].texture = {{'@'}};
+  p[0].texture = PlaneMappingTexture();
   cui3d::CuiImage img(h, w);
   img = c.render(img, p);
   return img;

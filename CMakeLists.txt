@@ -10,8 +10,10 @@ include_directories("${PROJECT_SOURCE_DIR}/include")
 #add_subdirectory(tests)
 set(CMAKE_CXX_FLAGS "-std=c++14 -O3 -march=native -mtune=native")
 add_executable(simple01
-  tests/simple01.cpp src/cui3d.cpp src/polygon.cpp src/geometry.cpp)
+  tests/simple01.cpp src/cui3d.cpp src/polygon.cpp src/geometry.cpp
+  src/texture.cpp)
 target_link_libraries(simple01 ncurses)
 add_executable(simple02
-  tests/simple02.cpp src/cui3d.cpp src/polygon.cpp src/geometry.cpp)
+  tests/simple02.cpp src/cui3d.cpp src/polygon.cpp src/geometry.cpp
+  src/texture.cpp)
 target_link_libraries(simple02 ncurses)

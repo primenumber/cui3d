@@ -3,6 +3,7 @@
 #include "status.hpp"
 #include <cstddef>
 #include <vector>
+#include "pixel.hpp"
 
 namespace cui3d {
 
@@ -13,15 +14,15 @@ class CuiImage {
   CuiImage() : height(0), width(0) {}
   CuiImage(std::size_t height, std::size_t width)
     : height(height), width(width),
-      data(height, std::vector<char>(width, '\0')),
+      data(height, std::vector<Pixel>(width)),
       visible(height, std::vector<bool>(width, false)) {};
   CuiImage(std::size_t height, std::size_t width,
-      const table<char> &data, const table<bool> &visible)
+      const table<Pixel> &data, const table<bool> &visible)
     : height(height), width(width),
       data(data), visible(visible) {};
   void view();
   std::size_t height, width;
-  table<char> data;
+  table<Pixel> data;
   table<bool> visible;
  private:
 };

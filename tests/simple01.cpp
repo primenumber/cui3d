@@ -15,8 +15,11 @@ cui3d::CuiImage draw(int h, int w, double t) {
       Vec3D(t*1.6-0.5,0.5, 0.3)));
   p.emplace_back(cui3d::make_cuboid(Vec3D(-t*1.6+0.2, -0.2, 0.0),
       Vec3D(-t*1.6+0.5,0.1, 0.3)));
-  p[0].texture = {{'@'}};
-  p[1].texture = {{'#'}};
+  p.emplace_back(applyTransform(cui3d::make_cuboid(Vec3D(-0.15, -0.15, 0.0),
+      Vec3D(0.15, 0.15, 0.3)), rotateZ(t)));
+  p[0].texture = PlaneMappingTexture();
+  p[1].texture = PlaneMappingTexture();
+  p[2].texture = PlaneMappingTexture();
   cui3d::CuiImage img(h, w);
   img = c.render(img, p);
   return img;

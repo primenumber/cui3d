@@ -90,21 +90,6 @@ std::vector<Vec3D> cross(const Polygon &p, const Line &l) {
   return v;
 }
 
-CuiImage Camera::render(CuiImage &img, const Polygon &p) {
-  auto poly2d = convert2d(p, camera_pos);
-  for (int i = 0; i < img.height; ++i) {
-    for (int j = 0; j < img.width; ++j) {
-      double x = (double)j / img.width - 0.5;
-      double y = (double)i / img.height - 0.5;
-      if (is_in_polygon(x, y, poly2d)) {
-        img.data[i][j] = p.texture[i%p.texture.size()][j%p.texture[0].size()];
-        img.visible[i][j] = true;
-      }
-    }
-  }
-  return img;
-}
-
 CuiImage Camera::render(CuiImage &img, const std::vector<Polygon> &vp) {
   std::vector<std::vector<double>> depth(img.height,
       std::vector<double>(img.width, 1e+8));
@@ -117,14 +102,11 @@ CuiImage Camera::render(CuiImage &img, const std::vector<Polygon> &vp) {
       Line l(camera_pos,
           camera_pos + camera_direction + x * basis[0] + y * basis[1]);
       for (int k = 0; k < vp.size(); ++k) {
-        int ti = i % vp[k].texture.size();
-        int tj = j % vp[k].texture[0].size();
-        char ch = vp[k].texture[ti][tj];
         auto vc = cross(vp[k], l);
         for (auto p : vc) {
           double dep = abs(p - camera_pos);
           if (dep < depth[i][j]) {
-            img.data[i][j] = ch;
+            img.data[i][j] = vp[k].texture(p);
             img.visible[i][j] = true;
             depth[i][j] = dep;
           }

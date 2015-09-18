@@ -8,7 +8,7 @@ namespace cui3d {
 void CuiImage::view() {
   for (int i = 0; i < height; ++i) {
     for (int j = 0; j < width; ++j) {
-      if (visible[i][j]) std::cout << data[i][j];
+      if (visible[i][j]) std::cout << data[i][j].ch;
       else std::cout << ' ';
     }
     std::cout << std::endl;
@@ -32,6 +32,14 @@ bool Screen::is_init_scr = false;
 Screen::Screen() {
   if (!is_init_scr) {
     initscr();
+    start_color();
+    init_pair(1, COLOR_BLUE, COLOR_BLACK);
+    init_pair(2, COLOR_GREEN, COLOR_BLACK);
+    init_pair(3, COLOR_CYAN, COLOR_BLACK);
+    init_pair(4, COLOR_RED, COLOR_BLACK);
+    init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
+    init_pair(6, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(7, COLOR_WHITE, COLOR_BLACK);
     is_init_scr = true;
   }
   getmaxyx(stdscr, height, width);
@@ -50,7 +58,8 @@ void Screen::render() {
         if (current_image.visible[i][j]
             && next_image.data[i][j] == current_image.data[i][j]) continue;
         move(i, j);
-        addch(next_image.data[i][j]);
+        attrset(COLOR_PAIR(next_image.data[i][j].foreground_color));
+        addch(next_image.data[i][j].ch);
       } else if (current_image.visible[i][j]) {
         move(i, j);
         addch(' ');
