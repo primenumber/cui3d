@@ -119,7 +119,7 @@ CuiImage Camera::render(CuiImage &img, const std::vector<Polygon> &vp) {
       for (int k = 0; k < vp.size(); ++k) {
         int ti = i % vp[k].texture.size();
         int tj = j % vp[k].texture[0].size();
-        char ch = img.data[i][j] = vp[k].texture[ti][tj];
+        char ch = vp[k].texture[ti][tj];
         auto vc = cross(vp[k], l);
         for (auto p : vc) {
           double dep = abs(p - camera_pos);
