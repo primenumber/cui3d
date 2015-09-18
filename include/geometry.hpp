@@ -16,7 +16,7 @@ class Vec3D {
   double &operator[](std::size_t index) { return vec[index]; }
   const double &operator[](std::size_t index) const { return vec[index]; }
  private:
-  std::array<double, 3> vec;
+  alignas(32) std::array<double, 4> vec;
 };
 
 Vec3D operator+(const Vec3D &, const Vec3D &);
