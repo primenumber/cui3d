@@ -33,13 +33,21 @@ Screen::Screen() {
   if (!is_init_scr) {
     initscr();
     start_color();
-    init_pair(1, COLOR_BLUE, COLOR_BLACK);
-    init_pair(2, COLOR_GREEN, COLOR_BLACK);
-    init_pair(3, COLOR_CYAN, COLOR_BLACK);
-    init_pair(4, COLOR_RED, COLOR_BLACK);
-    init_pair(5, COLOR_MAGENTA, COLOR_BLACK);
-    init_pair(6, COLOR_YELLOW, COLOR_BLACK);
-    init_pair(7, COLOR_WHITE, COLOR_BLACK);
+    std::array<int, 8> color_ary = {
+      COLOR_BLACK,
+      COLOR_BLUE,
+      COLOR_GREEN,
+      COLOR_CYAN,
+      COLOR_RED,
+      COLOR_MAGENTA,
+      COLOR_YELLOW,
+      COLOR_WHITE
+    };
+    for (int i = 0; i < 8; ++i)
+      for (int j = 0; j < 8; ++j)
+        if (i || j)
+          init_pair(i * 8 + j, color_ary[i], color_ary[j]);
+    assume_default_colors(COLOR_BLACK, COLOR_BLACK);
     is_init_scr = true;
   }
   getmaxyx(stdscr, height, width);
@@ -58,10 +66,13 @@ void Screen::render() {
         if (current_image.visible[i][j]
             && next_image.data[i][j] == current_image.data[i][j]) continue;
         move(i, j);
-        attrset(COLOR_PAIR(next_image.data[i][j].foreground_color));
+        int fgclr = static_cast<int>(next_image.data[i][j].foreground_color);
+        int bgclr = static_cast<int>(next_image.data[i][j].background_color);
+        attrset(COLOR_PAIR(fgclr * 8 + bgclr));
         addch(next_image.data[i][j].ch);
       } else if (current_image.visible[i][j]) {
         move(i, j);
+        attrset(COLOR_PAIR(0));
         addch(' ');
       }
     }
