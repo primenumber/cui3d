@@ -16,6 +16,7 @@ struct Polygon {
 };
 
 Polygon make_cuboid(const Vec3D &, const Vec3D &);
+Polygon applyTransform(const Polygon &, const Transform3D &);
 
 class Camera {
  public:

@@ -28,6 +28,14 @@ Polygon make_cuboid(const Vec3D &begin, const Vec3D &end) {
   return res;
 }
 
+Polygon applyTransform(const Polygon &p, const Transform3D &trans) {
+  Polygon res;
+  res.texture = p.texture;
+  for (const auto &tri : p.triangles)
+    res.triangles.emplace_back(applyTransform(tri, trans));
+  return res;
+}
+
 using P = std::complex<double>;
 using VP = std::vector<P>;
 using VVP = std::vector<VP>;

@@ -3,6 +3,7 @@
 #include <array>
 #include <vector>
 #include <boost/optional.hpp>
+#include "matrix.hpp"
 
 namespace cui3d {
 
@@ -55,6 +56,25 @@ struct Plane {
 
 Vec3D cross(const Plane &, const Line &);
 boost::optional<Vec3D> cross(const Triangle &, const Line &);
+
+using Transform3D = Matrix<4, 4>;
+Transform3D rotateX(const double theta);
+Transform3D rotateY(const double theta);
+Transform3D rotateZ(const double theta);
+Transform3D scaleX(const double scale);
+Transform3D scaleY(const double scale);
+Transform3D scaleZ(const double scale);
+Transform3D scale_all(const double scale);
+Transform3D scaleXYZ(const double scaleX, const double scaleY,
+    const double scaleZ);
+Transform3D translateX(const double dist);
+Transform3D translateY(const double dist);
+Transform3D translateZ(const double dist);
+Transform3D translateXYZ(const double distX, const double distY,
+    const double distZ);
+
+Vec3D applyTransform(const Vec3D&, const Transform3D &);
+Triangle applyTransform(const Triangle &, const Transform3D &);
 
 } // namespace cui3d
 
