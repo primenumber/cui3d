@@ -37,8 +37,12 @@ double dot(const Vec3D &lhs, const Vec3D &rhs) {
   return res;
 }
 
+double norm(const Vec3D &v) {
+  return dot(v, v);
+}
+
 double abs(const Vec3D &v) {
-  return std::sqrt(dot(v, v));
+  return std::sqrt(norm(v));
 }
 
 Vec3D normalize(const Vec3D &v) {
@@ -64,10 +68,10 @@ std::array<Vec3D, 3> orthonormal_basis(const Vec3D &vec) {
 
 bool is_in_triangle_impl(const Triangle &tri, const Vec3D &p) {
   std::bitset<3> bs;
-  Vec3D normal = normalize((tri[1] - tri[0]) * (tri[2] - tri[0]));
+  Vec3D orthogonal = (tri[1] - tri[0]) * (tri[2] - tri[0]);
   for (int i = 0; i < 3; ++i) {
     auto a = tri[(i+1)%3] - tri[i], q = p - tri[i];
-    double c1 = dot(a*q, normal);
+    double c1 = dot(a*q, orthogonal);
     if (std::abs(c1) < 1e-8) return false;
     bs[i] = c1 > 0;
   }
