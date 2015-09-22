@@ -5,7 +5,7 @@ CUI環境でも3Dアニメーションがしたい！
 
 # ビルド環境
 
-ncursesとそれなりに新しいC++コンパイラ、cmakeがあれば出来そう
+ncurses, pthread, boostとそれなりに新しいC++コンパイラ、cmakeがあれば出来そう
 
 # 動かしてみる
 
