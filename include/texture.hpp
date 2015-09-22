@@ -8,6 +8,8 @@ namespace cui3d {
 
 using Texture = std::function<Pixel(const Vec3D &)>;
 
+extern Texture defaultTexture;
+
 class PlaneMappingTexture {
  public:
    std::vector<std::vector<Pixel>> tp;

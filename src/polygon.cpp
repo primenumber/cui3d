@@ -2,6 +2,7 @@
 #include <cmath>
 #include <bitset>
 #include <complex>
+#include <thread>
 #include <boost/optional.hpp>
 
 namespace cui3d {
@@ -90,26 +91,56 @@ std::vector<Vec3D> cross(const Polygon &p, const Line &l) {
   return v;
 }
 
+boost::optional<Pixel> Camera::render_impl(const std::vector<Polygon> &vp,
+    const double x, const double y, const double scale,
+    const std::array<Vec3D, 3> &basis) {
+  double depth = 1e+8;
+  boost::optional<Pixel> res;
+  Line l(camera_pos,
+      camera_pos + camera_direction + x * basis[0] + y * basis[1]);
+  for (int k = 0; k < vp.size(); ++k) {
+    auto vc = cross(vp[k], l);
+    for (auto p : vc) {
+      double dep = abs(p - camera_pos);
+      if (dep < depth) {
+        res = vp[k].texture(p);
+        depth = dep;
+      }
+    }
+  }
+  return res;
+}
+
 CuiImage Camera::render(CuiImage &img, const std::vector<Polygon> &vp) {
   std::vector<std::vector<double>> depth(img.height,
       std::vector<double>(img.width, 1e+8));
   auto basis = orthonormal_basis(camera_direction);
-  for (int i = 0; i < img.height; ++i) {
-    for (int j = 0; j < img.width; ++j) {
-      double x = (double)j / img.width - 0.5;
-      double y = (double)i / img.height - 0.5;
-      double scale = abs(camera_direction);
-      Line l(camera_pos,
-          camera_pos + camera_direction + x * basis[0] + y * basis[1]);
-      for (int k = 0; k < vp.size(); ++k) {
-        auto vc = cross(vp[k], l);
-        for (auto p : vc) {
-          double dep = abs(p - camera_pos);
-          if (dep < depth[i][j]) {
-            img.data[i][j] = vp[k].texture(p);
-            img.visible[i][j] = true;
-            depth[i][j] = dep;
+  double scale = abs(camera_direction);
+  if (std::thread::hardware_concurrency() > 1) {
+    std::vector<std::thread> threads;
+    for (int t = 0; t < std::thread::hardware_concurrency(); ++t) {
+      threads.emplace_back(std::thread([&,t=t](){
+        for (int i = t; i < img.height; i += std::thread::hardware_concurrency()) {
+          for (int j = 0; j < img.width; ++j) {
+            double x = (double)j / img.width - 0.5;
+            double y = (double)i / img.height - 0.5;
+            if (auto opt_pixel = render_impl(vp, x, y, scale, basis)) {
+              img.data[i][j] = *opt_pixel;
+              img.visible[i][j] = true;
+            }
           }
+        }
+      }));
+    }
+    for (auto &th : threads) th.join();
+  } else {
+    for (int i = 0; i < img.height; ++i) {
+      for (int j = 0; j < img.width; ++j) {
+        double x = (double)j / img.width - 0.5;
+        double y = (double)i / img.height - 0.5;
+        if (auto opt_pixel = render_impl(vp, x, y, scale, basis)) {
+          img.data[i][j] = *opt_pixel;
+          img.visible[i][j] = true;
         }
       }
     }

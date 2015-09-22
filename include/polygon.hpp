@@ -4,16 +4,21 @@
 #include <cstddef>
 #include <array>
 #include <vector>
+#include <boost/optional.hpp>
 #include "geometry.hpp"
 #include "texture.hpp"
 
 namespace cui3d {
 
 struct Polygon {
+ public:
   template <typename T>
   using table = std::vector<std::vector<T>>;
   std::vector<Triangle> triangles;
   Texture texture;
+  Polygon() : texture(defaultTexture) {}
+  Polygon(const Polygon &) = default;
+  Polygon(Polygon &&) = default;
 };
 
 Polygon make_cuboid(const Vec3D &, const Vec3D &);
@@ -26,6 +31,9 @@ class Camera {
   Vec3D camera_pos;
   Vec3D camera_direction;
  private:
+  boost::optional<Pixel> render_impl(const std::vector<Polygon> &,
+      const double, const double, const double,
+      const std::array<Vec3D, 3> &);
 };
 
 } // namespace cui3d
