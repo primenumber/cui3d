@@ -27,13 +27,14 @@ Polygon applyTransform(const Polygon &, const Transform3D &);
 class Camera {
  public:
   Camera() : camera_pos(0, 0, -1.0), camera_direction(0, 0, 1.0) {};
-  CuiImage render(CuiImage &, const std::vector<Polygon> &);
+  CuiImage render(CuiImage &, const std::vector<Polygon> &) const;
   Vec3D camera_pos;
   Vec3D camera_direction;
  private:
   boost::optional<Pixel> render_impl(const std::vector<Polygon> &,
       const double, const double, const double,
-      const std::array<Vec3D, 3> &);
+      const std::array<Vec3D, 3> &) const;
+  std::vector<Polygon> normalize(const std::vector<Polygon> &) const;
 };
 
 } // namespace cui3d

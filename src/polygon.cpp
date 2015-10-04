@@ -93,7 +93,7 @@ std::vector<Vec3D> cross(const Polygon &p, const Line &l) {
 
 boost::optional<Pixel> Camera::render_impl(const std::vector<Polygon> &vp,
     const double x, const double y, const double scale,
-    const std::array<Vec3D, 3> &basis) {
+    const std::array<Vec3D, 3> &basis) const {
   double depth = 1e+8;
   boost::optional<Pixel> res;
   Line l(camera_pos,
@@ -111,7 +111,7 @@ boost::optional<Pixel> Camera::render_impl(const std::vector<Polygon> &vp,
   return res;
 }
 
-CuiImage Camera::render(CuiImage &img, const std::vector<Polygon> &vp) {
+CuiImage Camera::render(CuiImage &img, const std::vector<Polygon> &vp) const {
   std::vector<std::vector<double>> depth(img.height,
       std::vector<double>(img.width, 1e+8));
   auto basis = orthonormal_basis(camera_direction);
