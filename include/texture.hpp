@@ -10,6 +10,13 @@ using Texture = std::function<Pixel(const Vec3D &)>;
 
 extern Texture defaultTexture;
 
+class FillfullTexture {
+ public:
+  const Pixel pixel;
+  FillfullTexture(const Pixel &pixel) : pixel(pixel) {}
+  Pixel operator()(const Vec3D &vec) const { return pixel; }
+};
+
 class PlaneMappingTexture {
  public:
    std::vector<std::vector<Pixel>> tp;
