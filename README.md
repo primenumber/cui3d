@@ -12,7 +12,7 @@ ncurses, pthread, boostとそれなりに新しいC++コンパイラ、cmakeが�
 ```
 $ cmake .
 $ make
-$ ./simple01
+$ tests/simple01
 ```
 
 # TODO
