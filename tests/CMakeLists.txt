@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 2.8)
+add_executable(simple01 simple01.cpp)
+target_link_libraries(simple01 ncurses pthread boost_system boost_timer cui3d)
+add_executable(simple02 simple02.cpp)
+target_link_libraries(simple02 ncurses pthread cui3d)
+add_executable(blockpuzzle block_puzzle/block_puzzle.cpp block_puzzle/block.cpp)
+target_link_libraries(blockpuzzle ncurses pthread boost_system cui3d)
