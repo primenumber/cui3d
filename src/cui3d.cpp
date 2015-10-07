@@ -6,8 +6,8 @@
 namespace cui3d {
 
 void CuiImage::view() {
-  for (int i = 0; i < height; ++i) {
-    for (int j = 0; j < width; ++j) {
+  for (std::size_t i = 0; i < height; ++i) {
+    for (std::size_t j = 0; j < width; ++j) {
       if (visible[i][j]) std::cout << data[i][j].ch;
       else std::cout << ' ';
     }
@@ -16,8 +16,8 @@ void CuiImage::view() {
 }
 
 CuiImage &composite(CuiImage &lhs, const CuiImage &rhs) {
-  for (int i = 0; i < std::min(lhs.height, rhs.height); ++i) {
-    for (int j = 0; j < std::min(lhs.width, rhs.width); ++j) {
+  for (std::size_t i = 0; i < std::min(lhs.height, rhs.height); ++i) {
+    for (std::size_t j = 0; j < std::min(lhs.width, rhs.width); ++j) {
       if (rhs.visible[i][j]) {
         lhs.visible[i][j] = true;
         lhs.data[i][j] = rhs.data[i][j];
@@ -60,8 +60,8 @@ void Screen::draw(const CuiImage &img) {
 }
 
 void Screen::render() {
-  for (int i = 0; i < height; ++i) {
-    for (int j = 0; j < width; ++j) {
+  for (std::size_t i = 0; i < height; ++i) {
+    for (std::size_t j = 0; j < width; ++j) {
       if (next_image.visible[i][j]) {
         if (current_image.visible[i][j]
             && next_image.data[i][j] == current_image.data[i][j]) continue;
