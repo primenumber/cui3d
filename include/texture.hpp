@@ -14,7 +14,7 @@ class FillfullTexture {
  public:
   const Pixel pixel;
   FillfullTexture(const Pixel &pixel) : pixel(pixel) {}
-  Pixel operator()(const Vec3D &vec) const { return pixel; }
+  Pixel operator()(const Vec3D &) const { return pixel; }
 };
 
 class PlaneMappingTexture {
