@@ -29,4 +29,4 @@ bool is_subset(const Block &lhs, const Block &rhs);
 bool operator==(const Block &, const Block &);
 bool operator!=(const Block &, const Block &);
 cui3d::Polygon to_polygon(const Block &, const cui3d::Texture &);
-std::vector<Block> divide_block(const Block &, int);
+std::vector<Block> divide_block(const Block &, const int);

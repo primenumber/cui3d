@@ -1,6 +1,8 @@
 #include "block.hpp"
 
 #include <algorithm>
+#include <queue>
+#include <set>
 
 I3d operator+(const I3d &lhs, const I3d &rhs) {
   I3d res;
@@ -133,25 +135,75 @@ I3d gravity_point(const std::vector<I3d> &i3dv) {
   return {sum[0]/n, sum[1]/n, sum[2]/n};
 }
 
-std::vector<Block> divide_block(const Block &blk, int num) {
-  while (true) {
-    std::vector<Block> res(num);
-    std::random_device rd;
-    std::mt19937 mt(rd());
-    std::uniform_int_distribution<> dis(0, num-1);
-    for (I3d c : blk.cubes) {
-      res[dis(mt)].cubes.push_back(c);
-    }
-    bool ok = true;
-    for (Block &resb : res) {
-      if (resb.cubes.empty()) {
-        ok = false;
-        break;
-      }
-      resb.offset = gravity_point(resb.cubes);
-      for (I3d &cube : resb.cubes)
-        cube -= resb.offset;
-    }
-    if (ok) return res;
+class UnionFind {
+ public:
+  UnionFind(const std::size_t size) : parent(size, -1) {}
+  int root(const int index) {
+    if (parent[index] < 0) return index;
+    return parent[index] = root(parent[index]);
   }
+  int join(const int index1, const int index2) {
+    int r1 = root(index1);
+    int r2 = root(index2);
+    if (r1 == r2) return false;
+    if (parent[r1] < parent[r2]) std::swap(r1, r2);
+    parent[r2] += parent[r1];
+    parent[r1] = r2;
+    return true;
+  }
+  int size() const { return parent.size(); }
+  int size(const int index) { return -parent[root(index)]; }
+ private:
+  std::vector<int> parent;
+};
+std::vector<std::pair<int, int>> neighbor_index_pairs(const std::vector<I3d> &cubes) {
+  std::vector<std::pair<int, int>> res;
+  for (std::size_t i = 0; i < cubes.size(); ++i)
+    for (std::size_t j = 0; j < i; ++j)
+      if (norm(cubes[i] - cubes[j]) == 1)
+        res.emplace_back(i, j);
+  return res;
+}
+std::vector<int> classify(std::vector<std::pair<int, int>> edges,
+    const int n, const int num) {
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  UnionFind uf(n);
+  shuffle(begin(edges), end(edges), mt);
+  int conti_num = n;
+  for (auto e : edges) {
+    if (uf.size(e.first) > n/num || uf.size(e.second) > n/num) continue;
+    if (uf.join(e.first, e.second)) {
+      --conti_num;
+      if (conti_num == num) break;
+    }
+  }
+  std::vector<int> roots;
+  for (int i = 0; i < n; ++i)
+    roots.push_back(uf.root(i));
+  std::sort(begin(roots), end(roots));
+  roots.erase(std::unique(begin(roots), end(roots)), end(roots));
+  std::vector<int> res;
+  for (int i = 0; i < n; ++i) {
+    int index = lower_bound(begin(roots), end(roots), uf.root(i)) - begin(roots);
+    res.push_back(index);
+  }
+  return res;
+}
+std::vector<Block> divide_block(const Block &blk, const int num) {
+  using std::begin;
+  using std::end;
+  std::vector<Block> res(num);
+  const int n = blk.cubes.size();
+  auto edges = neighbor_index_pairs(blk.cubes);
+  auto indices = classify(edges, n, num);
+  for (int i = 0; i < n; ++i) {
+    res[indices[i]].cubes.push_back(blk.cubes[i]);
+  }
+  for (Block &resb : res) {
+    resb.offset = gravity_point(resb.cubes);
+    for (I3d &cube : resb.cubes)
+      cube -= resb.offset;
+  }
+  return res;
 }
