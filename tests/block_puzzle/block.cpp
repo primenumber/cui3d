@@ -14,7 +14,7 @@ I3d &operator+=(I3d &lhs, const I3d &rhs) {
 I3d operator-(const I3d &lhs, const I3d &rhs) {
   I3d res;
   for (int i = 0; i < 3; ++i)
-    res[i] = rhs[i] - lhs[i];
+    res[i] = lhs[i] - rhs[i];
   return res;
 }
 I3d &operator-=(I3d &lhs, const I3d &rhs) {
