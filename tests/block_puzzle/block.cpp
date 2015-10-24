@@ -20,6 +20,11 @@ I3d operator-(const I3d &lhs, const I3d &rhs) {
 I3d &operator-=(I3d &lhs, const I3d &rhs) {
   return lhs = lhs - rhs;
 }
+int norm(const I3d &v) {
+  int sum = 0;
+  for (int i : v) sum += i*i;
+  return sum;
+}
 
 Block move(const Block &b, I3d delta) {
   Block res = b;

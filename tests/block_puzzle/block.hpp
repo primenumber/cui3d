@@ -10,6 +10,7 @@ I3d operator+(const I3d &, const I3d &);
 I3d &operator+=(I3d &, const I3d &);
 I3d operator-(const I3d &, const I3d &);
 I3d &operator-=(I3d &, const I3d &);
+int norm(const I3d &);
 
 struct Block {
   std::vector<I3d> cubes;
