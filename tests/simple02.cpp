@@ -1,5 +1,6 @@
 #include <cui3d.hpp>
 #include <ctime>
+#include <cmath>
 #include <iostream>
 #include <tuple>
 #include <sys/time.h>
