@@ -2,7 +2,9 @@
 #include <cmath>
 #include <bitset>
 #include <complex>
+#include <future>
 #include <thread>
+#include <iostream>
 #include <boost/optional.hpp>
 
 namespace cui3d {
@@ -41,109 +43,89 @@ using P = std::complex<double>;
 using VP = std::vector<P>;
 using VVP = std::vector<VP>;
 
-bool is_in_polygon(double x, double y, const VP &t) {
-  std::bitset<3> positive;
+bool is_on_segment(const Vec3D &p, const Line &l) {
+  return abs(l.a-l.b) + 1e-8 > abs(p-l.a) + abs(p-l.b);
+}
+
+struct Line2D {
+  P a, b;
+};
+
+boost::optional<Line2D> render_impl(
+    const Triangle &tri, const Plane &plane, const std::array<Vec3D, 3> &basis,
+    const Vec3D &camera_pos, const Vec3D &camera_direction) {
+  VP cross_point;
   for (int i = 0; i < 3; ++i) {
-    P p(x, y);
-    p -= t[i];
-    P b = t[(i+1)%3] - t[i];
-    double cross = std::imag(std::conj(b)*p);
-    positive[i] = cross > 0;
-    if (std::abs(cross) < 1e-8) return false;
-  }
-  return positive.all() || positive.none();
-}
-
-bool is_in_polygon(double x, double y, const VVP &p) {
-  for (const auto &tri : p) {
-    if (is_in_polygon(x, y, tri)) return true;
-  }
-  return false;
-}
-
-VVP convert2d(const Polygon &p, const Vec3D &camera_pos) {
-  VVP res;
-  for (auto tri : p.triangles) {
-    bool visible = true;
-    VP res_t;
-    for (auto &v : tri.verticies) {
-      v = v - camera_pos;
-      if (v[2] <= 0.0) {
-        visible = false;
-        break;
-      }
-      v[0] /= v[2] / 2.0;
-      v[1] /= v[2] / 2.0;
-      res_t.emplace_back(v[0] / v[2] * 2.0, v[1] / v[2] * 2.0);
-    }
-    if (visible) res.push_back(res_t);
-  }
-  return res;
-}
-
-std::vector<Vec3D> cross(const Polygon &p, const Line &l) {
-  std::vector<Vec3D> v;
-  for (const auto &tri : p.triangles) {
-    if (auto op = cross(tri, l)) {
-      v.emplace_back(*op);
-    }
-  }
-  return v;
-}
-
-boost::optional<Pixel> Camera::render_impl(const std::vector<Polygon> &vp,
-    const double x, const double y, const double scale,
-    const std::array<Vec3D, 3> &basis) const {
-  double depth = 1e+8;
-  boost::optional<Pixel> res;
-  Line l(camera_pos,
-      camera_pos + camera_direction + x * basis[0] + y * basis[1]);
-  for (int k = 0; k < vp.size(); ++k) {
-    auto vc = cross(vp[k], l);
-    for (auto p : vc) {
-      double dep = abs(p - camera_pos);
-      if (dep < depth) {
-        res = vp[k].texture(p);
-        depth = dep;
+    Line l(tri[i], tri[(i+1)%3]);
+    Vec3D c = cross(plane, l);
+    if (is_on_segment(c, l)) {
+      double x = dot(c - camera_pos, basis[0]);
+      double z = dot(c - camera_pos, camera_direction);
+      if (z > 0) {
+        cross_point.emplace_back(x/z, z);
       }
     }
   }
-  return res;
+  std::sort(std::begin(cross_point), std::end(cross_point),
+      [](P l, P r){ return l.real() < r.real(); });
+  if (cross_point.size() == 2) {
+    return (Line2D){cross_point[0], cross_point[1]};
+  }
+  return boost::none;
+}
+
+double linear_interpolation(Line2D line, double x) {
+  double scale = (x - line.a.real()) / (line.b.real() - line.a.real());
+  return scale * (line.b.imag() - line.a.imag()) + line.a.imag();
+}
+
+CuiImage Camera::render_line(CuiImage &img, const std::vector<Polygon> &vp, const int i) const {
+  std::vector<double> depth(img.width, 1e+8);
+  double y = (double)i / img.height - 0.5;
+  auto basis = orthonormal_basis(camera_direction);
+  double scale = abs(camera_direction);
+  Plane plane(Triangle(camera_pos,
+        camera_pos + camera_direction + -0.5 * basis[0] + y * basis[1],
+        camera_pos + camera_direction + 0.5 * basis[0] + y * basis[1]));
+  for (const Polygon &poly : vp) {
+    for (const Triangle &tri : poly.triangles) {
+      if (auto opt_segment = render_impl(tri, plane, basis, camera_pos, camera_direction)) {
+        auto segment = *opt_segment;
+        for (int j = std::max(0.0, (segment.a.real() + 0.5) * img.width);
+            j < std::min((double)img.width, (segment.b.real() + 0.5) * img.width); ++j) {
+          double x = (double)j / img.width - 0.5;
+          double dep = linear_interpolation(segment, x);
+          if (dep < depth[j]) {
+            Vec3D p = camera_pos + dep * camera_direction + dep * x * basis[0] + dep * y * basis[1];
+            depth[j] = dep;
+            img.data[i][j] = poly.texture(p);
+            img.visible[i][j] = true;
+          }
+        }
+      }
+    }
+  }
+  return img;
 }
 
 CuiImage Camera::render(CuiImage &img, const std::vector<Polygon> &vp) const {
   std::vector<std::vector<double>> depth(img.height,
       std::vector<double>(img.width, 1e+8));
-  auto basis = orthonormal_basis(camera_direction);
-  double scale = abs(camera_direction);
-  if (std::thread::hardware_concurrency() > 1) {
-    std::vector<std::thread> threads;
-    for (int t = 0; t < std::thread::hardware_concurrency(); ++t) {
-      threads.emplace_back(std::thread([&,t=t](){
-        for (int i = t; i < img.height; i += std::thread::hardware_concurrency()) {
-          for (int j = 0; j < img.width; ++j) {
-            double x = (double)j / img.width - 0.5;
-            double y = (double)i / img.height - 0.5;
-            if (auto opt_pixel = render_impl(vp, x, y, scale, basis)) {
-              img.data[i][j] = *opt_pixel;
-              img.visible[i][j] = true;
-            }
-          }
-        }
-      }));
-    }
-    for (auto &th : threads) th.join();
-  } else {
+  size_t th = std::thread::hardware_concurrency();
+  if (th == 1) {
     for (int i = 0; i < img.height; ++i) {
-      for (int j = 0; j < img.width; ++j) {
-        double x = (double)j / img.width - 0.5;
-        double y = (double)i / img.height - 0.5;
-        if (auto opt_pixel = render_impl(vp, x, y, scale, basis)) {
-          img.data[i][j] = *opt_pixel;
-          img.visible[i][j] = true;
-        }
-      }
+      render_line(img, vp, i);
     }
+  } else {
+    std::vector<std::future<void>> vf;
+    for (size_t t = 0; t < th; ++t) {
+      vf.push_back(std::async(std::launch::async, [=](CuiImage &img, const std::vector<Polygon> &vp, const size_t t) {
+            for (int i = t; i < img.height; i += th) {
+              render_line(img, vp, i);
+            }
+          }, std::ref(img), std::cref(vp), t));
+    }
+    for (auto && f : vf) f.get();
   }
   return img;
 }

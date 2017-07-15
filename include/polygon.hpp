@@ -31,9 +31,7 @@ class Camera {
   Vec3D camera_pos;
   Vec3D camera_direction;
  private:
-  boost::optional<Pixel> render_impl(const std::vector<Polygon> &,
-      const double, const double, const double,
-      const std::array<Vec3D, 3> &) const;
+  CuiImage render_line(CuiImage &, const std::vector<Polygon> &, const int i) const;
   std::vector<Polygon> normalize(const std::vector<Polygon> &) const;
 };
 
